@@ -11,9 +11,16 @@ class Task():
         self.location = None
         self.time = None
         self.taskList = []
+        self.taskDuration = []
     
     def get_task_description(self):
         return f'Location: {self.location}, Time: {self.time}, TaskList: {self.taskList}'
+    
+    def get_task_duration(self):
+        return self.taskDuration
+    
+    def __len__(self):
+        return len(self.taskList)
 
 class TaskSet:
     def __init__(self) -> None:
