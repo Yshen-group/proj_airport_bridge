@@ -94,6 +94,7 @@ class airports(mesa.Model):
                 name_list = self.operator.match_algorithm(task.taskList,df_can)
                 print(name_list)
                 self.crew._update_people_status(name_list,task,self.now)
+                self.taskSet.update_task_status(name_list,task)
 
             print(f'Now time: {self.now}')
     

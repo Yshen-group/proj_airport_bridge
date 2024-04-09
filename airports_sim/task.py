@@ -36,3 +36,13 @@ class TaskSet:
     
     def get_tasks(self):
         return self.tasks
+    
+    def update_task_status(self,name_list,task):
+        '''
+        根据任务的指派更新任务的状态
+        
+        name_list: 任务执行人员
+        task: 任务
+        '''
+        for name in name_list:
+            print(f'{name} finish the task: {task.get_task_description()}')
