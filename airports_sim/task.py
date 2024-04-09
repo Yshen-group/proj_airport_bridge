@@ -11,9 +11,16 @@ class Task():
         self.location = None
         self.time = None
         self.taskList = []
+        self.taskDuration = []
     
     def get_task_description(self):
         return f'Location: {self.location}, Time: {self.time}, TaskList: {self.taskList}'
+    
+    def get_task_duration(self):
+        return self.taskDuration
+    
+    def __len__(self):
+        return len(self.taskList)
 
 class TaskSet:
     def __init__(self) -> None:
@@ -29,3 +36,13 @@ class TaskSet:
     
     def get_tasks(self):
         return self.tasks
+    
+    def update_task_status(self,name_list,task):
+        '''
+        根据任务的指派更新任务的状态
+        
+        name_list: 任务执行人员
+        task: 任务
+        '''
+        for name in name_list:
+            print(f'{name} finish the task: {task.get_task_description()}')

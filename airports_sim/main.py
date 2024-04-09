@@ -2,6 +2,7 @@ from flights import *
 from task import *
 from aviation import *
 from airports import *
+from crew import *
 
 def main():
     airport = airports()
