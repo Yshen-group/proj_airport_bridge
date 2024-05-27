@@ -11,7 +11,7 @@ class operator():
     def __init__(self) -> None:
         pass 
 
-    def match_algorithm(self,taskList,candidate):
+    def match_algorithm(self,task,candidate):
         ''' 
         匹配算法，按照沈老师整理的过程撰写匹配逻辑
         1. 宽窄机型
@@ -23,6 +23,11 @@ class operator():
         return: 匹配的人员名单
         '''
         # 贪心选择，空闲时间最长排序的人员，第一具有 task 的人员
+
+        taskList = task.taskList
+        boundType = task.type # 飞机进出港
+        airType = task.airtype # 机型
+        print(f'boundType: {boundType}, airType: {airType}')
         df_can = candidate.sort_values(by='free',ascending=False)
         name_task_dict = {}
         trans = ['isYiBan','isFangXing','isWeiXiu','isZhongWen','isYingWen']
@@ -161,31 +166,30 @@ class airports(mesa.Model):
                 print(task.get_task_description())
                 self.taskSet.add_task(task) # 向任务集合中添加任务
 
-        if task.taskList:   # 这里应该是获取所有需要解决的任务列表，然后匹配所有的任务
-            flight_group = (flight.actual_datetime - self.begin).days % 4 + 1 # 每一天同时只有一个 Group 工作
-            df_can =self.crew.get_near1_people(self.get_lounge(task.gate),flight_group) # 获取附近 1/4 的人员
-            name_list = self.operator.match_algorithm(task.taskList,df_can) # 第一次任务匹配
-            if not name_list: # 第一次找不到人
-                df_can = self.crew.get_near2_people(self.get_lounge(task.gate),flight_group,self.now,df_can) # 第二次任务匹配
-                name_list = self.operator.match_algorithm(task.taskList,df_can)
-            if not name_list:
-                # 除非没有人员，否则不会执行
-                print('No enough people, try to find the near3 people')
-                df_can = self.crew.get_near3_people(self.get_lounge(task.gate),flight_group,df_can) # 第三次任务匹配
-                name_list = self.operator.match_algorithm(task.taskList,df_can)
-                
-            self.crew._update_people_status(name_list,task,self.now)
-            self.taskSet.update_task_status(name_list,task)
-            # 保存 namelist
-            self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
-            print(name_list)
-            print(self.crew.dfCrew.head())
-        print(f'Now time: {self.now}')
-        
-        
+        if self.taskSet.isnotnull():   # 这里应该是获取所有需要解决的任务列表，然后匹配所有的任务
+            for task in self.taskSet:
+                group = (self.now - self.begin).days % 4 + 1 # 每一天同时只有一个 Group 工作
+                df_can =self.crew.get_near1_people(self.get_lounge(task.gate),group) # 获取附近 1/4 的人员
+                name_list = self.operator.match_algorithm(task,df_can) # 第一次任务匹配
+                if not name_list: # 第一次找不到人
+                    df_can = self.crew.get_near2_people(self.get_lounge(task.gate),group,self.now,df_can) # 第二次任务匹配
+                    name_list = self.operator.match_algorithm(task,df_can)
+                if not name_list:
+                    # 除非没有人员，否则不会执行
+                    print('No enough people, try to find the near3 people')
+                    df_can = self.crew.get_near3_people(self.get_lounge(task.gate),group,df_can) # 第三次任务匹配
+                    name_list = self.operator.match_algorithm(task,df_can)
+                    
+                self.crew._update_people_status(name_list,task,self.now)
+                self.taskSet.update_task_status(name_list,task)
+                # 保存 namelist
+                if name_list:
+                    self.taskSet.tasks.remove(task)
+                    self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
+
     def is_done(self):
-        # return self.flightSet.index == 10
-        return self.flightSet.is_done()
+        return self.flightSet.index == 10
+        # return self.flightSet.is_done()
 
 
     
