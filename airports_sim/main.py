@@ -12,6 +12,7 @@ def main():
 
     while not airport.is_done():
         airport.step()
+    airport.save_result()
 
 if __name__ == '__main__':
     main()

@@ -33,21 +33,43 @@ class operator():
                         break
         return name_task_dict
 
-
 class airports(mesa.Model):
     def __init__(self):
         super().__init__()
         self.aviationSet = ACsets()
         self.flightSet = FlightsSet()
-        self.taskSet = TaskSet()
         self.crew = Crew()
         self.operator = operator()
 
+        self.taskSet = TaskSet()
         self.margin = pd.Timedelta('15 min') # 时间间隔
         self.begin = None
         self.now = None
         self.gate_terminal = None
+        self.df_task_exec = pd.DataFrame(columns=['taskTime','taskLocation','taskTerminal','taskDuration','assignedPeople']) # 每次更新之后记录对应的任务需求和人员名单，具体的 col name 需要之后再确定
     
+    def record_process(self,location,time,terminals,duration,name_list):
+        '''
+        记录每次任务和对应的人员名单
+        task_list: 任务列表
+        name_list: 人员名单
+        '''
+        print('======   Record the process   =======')
+        duration = 10
+        name_list = ''.join(list(name_list.keys()))
+        # 为 df_task_exec 添加一行记录
+        new_row = {'taskTime':time,'taskLocation':location,'taskTerminal':terminals,'taskDuration':duration,'assignedPeople':name_list}
+        # 没有 row
+        df_new_row = pd.DataFrame(new_row,index=[0])
+        # 合并 df
+        self.df_task_exec = pd.concat([self.df_task_exec,df_new_row],ignore_index=True)
+    
+    def save_result(self):
+        ''' 
+        保存
+        '''
+        self.df_task_exec.to_excel('./dataset/task_exec.xlsx',index=False)
+
     def login(self,aviation_path,flights_path):
         self.aviationSet.login(aviation_path)
         self.flightSet.login(flights_path)
@@ -70,6 +92,7 @@ class airports(mesa.Model):
             # update newTask duration list
         newTask.taskDuration = [pd.Timedelta('10 min') for _ in range(len(newTask))]
         return newTask
+    
     def get_terminal(self,terminal):
         terminal = int(terminal)
         try:
@@ -81,27 +104,32 @@ class airports(mesa.Model):
             return terminals[fix.index(min(fix))]
     
     def step(self):
-        self.now += pd.Timedelta('1min')
-        flights_list = self.get_margin_flights()
+        self.now += pd.Timedelta('1min') # 每分钟仿真一次
+        flights_list = self.get_margin_flights() # 获取能够观察到的航班
         if flights_list:
             for flight in flights_list:
-                task = self.generation_task(flight)
-                self.taskSet.add_task(task)
-                print('=========Task Description=========')
+                task = self.generation_task(flight) # 获取等待执行任务的航班对应的任务
+                self.taskSet.add_task(task) # 添加任务
+
+                print('======   Observation the task =========')
                 print(task.get_task_description())
+
+                print('======   Recall crew people   =========')
                 df_can =self.crew.get_near1_people(self.get_terminal(task.location),1)
-                print('=========Match Algorithm=========')
+
+                print('======   Start  match algrotihm   =======')
                 name_list = self.operator.match_algorithm(task.taskList,df_can)
-                print(name_list)
+
+                print('======   Update the status of people   =======')
                 self.crew._update_people_status(name_list,task,self.now)
                 self.taskSet.update_task_status(name_list,task)
-
+                # 保存 name  list
+                self.record_process(task.location,task.time,task.terminals,task.taskDuration,name_list)
             print(f'Now time: {self.now}')
-    
-    
+        
     def is_done(self):
-        return self.flightSet.index == 10
-        # return self.flightSet.is_done()
+        #return self.flightSet.index == 10
+        return self.flightSet.is_done()
 
 
     
