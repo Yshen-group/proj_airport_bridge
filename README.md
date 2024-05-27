@@ -41,8 +41,7 @@ airports.py
 1. operator 根据观察的勤务需求和空闲人员完成匹配
 2. airports 函数仿真的主要逻辑，通过调用上述的类别，在时间线的步骤下，按照 flights 生成对应的航班，并根据 aviation 产生对应的 task，并调用 crew 的召回算法来获取当前的空闲人员，引入 operator 后完成两者的最优匹配。根据识别的结果来完成状态更新。
 
-![仿真算法流程](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240527112840.png
-)
+![仿真算法流程](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240527112840.png)
 
 ### 匹配算法思路
 这部分主要由 zp 复杂，期望主导引入 TRB 论文，前期调研可行的匹配算法包括：
@@ -51,12 +50,12 @@ airports.py
 3. 更优秀的二分图匹配算法，KM 匹配、GS 匹配等
 4. MDP 动态时空价值匹配，基于未来状态的匹配算法
 
-![可能的匹配算法思路](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240527112739.png
-)
+![可能的匹配算法思路](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240527112739.png)
 
 ### 结果输出
 
-生成的可行执行过程存储在 task-exec 文件中，后续会增加可视化输出模块
+生成的可行执行过程存储在 task-exec 文件中，后续会增加可视化输出模块,增加多路人员召回模块最终结果实现0%缺失
+![匹配算法缺失](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240527192737.png)
 
 ### 如何修改本项目
 
