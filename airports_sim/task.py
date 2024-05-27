@@ -60,3 +60,13 @@ class TaskSet:
         '''
         for name in name_list:
             print(f'{name} finish the task: {task.get_task_description()}')
+    
+    def isnotnull(self):
+        '''
+        判断是否为空
+        '''
+        return len(self.tasks) > 0
+    
+    # 遍历
+    def __iter__(self):
+        return iter(self.tasks)
