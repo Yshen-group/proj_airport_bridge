@@ -27,8 +27,14 @@ class operator():
         taskList = task.taskList
         boundType = task.type # 飞机进出港
         airType = task.airtype # 机型
+
         print(f'boundType: {boundType}, airType: {airType}')
         df_can = candidate.sort_values(by='free',ascending=False)
+
+        # 如果没有人员
+        if df_can.shape[0] == 0:
+            return None
+        
         name_task_dict = {}
         trans = ['isYiBan','isFangXing','isWeiXiu','isZhongWen','isYingWen']
         # taskList 代表的是五种任务的属性，[self.isYiBan,self.isFangXing,self.isWeiXiu,self.isZhongwen,self.isYingwen]
@@ -59,17 +65,19 @@ class airports(mesa.Model):
     '''
     def __init__(self):
         super().__init__()
-        # 固定数据注册
+        # Fixed datatype
         self.aviationSet = ACsets()  # 航司信息
         self.flightSet = FlightsSet() # 航班信息
         self.crew = Crew() # 地勤人员信息
         self.operator = operator() # 调度算法
         self.gate_lounge = None
-        # 动态数据
+
+        # Dynamic datatype
         self.taskSet = TaskSet() # 任务集合
         self.margin = pd.Timedelta('15 min') # 可观察未来航班的时间间隔
         self.begin = None
         self.now = None
+        self.days = 0
         self.df_task_exec = pd.DataFrame(columns=['Time',
                                                   'Lounge',
                                                   'Gate',
@@ -111,14 +119,12 @@ class airports(mesa.Model):
         self.flightSet.login(flights_path)
         self.flightSet.filter_by_id(self.aviationSet.get_company_codingID())
         self.crew.login(crew_zizhi_path,crew_group_path)
-
-        print(self.crew.dfCrew.head())
         self.gate_terminal = pd.read_excel(gate_lounge_path) # ./dataset/Gate_lounge.xlsx'
         self.gate_terminal.rename(columns={'停机口':'gate',
                                            '休息室':'lounge'}, inplace=True)
         self.begin = self.flightSet.get_begin_time()
         self.now = self.begin # 初始化最早时间
-    
+
     def get_margin_flights(self):
         '''
         获取可观察的航班的集合
@@ -135,8 +141,7 @@ class airports(mesa.Model):
         newTask.gate = flight.gate # 任务执行登机口
         newTask.type = flight.boundType # 任务类型
         newTask.airtype = flight.airType # 任务飞机类型
-
-        newTask.taskDuration = [pd.Timedelta('10 min') for _ in range(len(newTask))] # 任务持续时间,这部分需要做数据分析
+        newTask.taskDuration = [newTask.get_task_duration() for _ in range(len(newTask.taskList))] # 任务持续时间,这部分需要做数据分析
         return newTask
     
     def get_lounge(self,gate):
@@ -160,10 +165,9 @@ class airports(mesa.Model):
         self.crew.update_status(self.now) # 更新人员的 status 状态
         flights_list = self.get_margin_flights() # 获取能够观察到的航班
 
-        if flights_list: # TODO 修改为taskSets
+        if flights_list: 
             for flight in flights_list:
                 task = self.generation_task(flight) # 根据航班信息生成任务
-                print(task.get_task_description())
                 self.taskSet.add_task(task) # 向任务集合中添加任务
 
         if self.taskSet.isnotnull():   # 这里应该是获取所有需要解决的任务列表，然后匹配所有的任务
@@ -172,6 +176,7 @@ class airports(mesa.Model):
                 df_can =self.crew.get_near1_people(self.get_lounge(task.gate),group) # 获取附近 1/4 的人员
                 name_list = self.operator.match_algorithm(task,df_can) # 第一次任务匹配
                 if not name_list: # 第一次找不到人
+                    print('No enough people, try to find the near2 people')
                     df_can = self.crew.get_near2_people(self.get_lounge(task.gate),group,self.now,df_can) # 第二次任务匹配
                     name_list = self.operator.match_algorithm(task,df_can)
                 if not name_list:
@@ -187,9 +192,14 @@ class airports(mesa.Model):
                     self.taskSet.tasks.remove(task)
                     self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
 
+        # 每增加一天
+        if (self.now-self.begin).days != self.days:
+            self.crew.record_single_day(str(self.now.month)+'-'+str(self.now.day))
+            self.days = (self.now-self.begin).days # 更新天数
+
     def is_done(self):
-        return self.flightSet.index == 10
-        # return self.flightSet.is_done()
+        # return self.flightSet.index == 10
+        return self.flightSet.is_done()
 
 
     

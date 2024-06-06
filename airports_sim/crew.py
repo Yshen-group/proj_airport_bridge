@@ -2,6 +2,7 @@ import mesa
 import pandas as pd
 import numpy as np
 from task import *
+import copy
 class Crew:
     ''' 
     机组人员管理
@@ -48,11 +49,12 @@ class Crew:
                                '英文':'isYingWen',
                                '休息室':'lounge',
                                '组别':'group'}, inplace=True)
-        df_new['status'] = 0 # 空闲
-        df_new['work_load'] = 0 # 工作时长
-        df_new['end_time'] = None # 结束时间
-        df_new['gate'] = None
-        df_new['free'] = 0
+        df_new['status'] = 0 # 0-1 标识，0 标识空闲；1 标识被占用
+        df_new['work_load'] = 0 # 工作时长， 标识总工作时间
+        df_new['end_time'] = None # 期望工作结束时间，begin_time + task_duration
+        df_new['gate'] = None # 工作登机口
+        df_new['count'] = 0 # 被派工次数
+        df_new['free'] = 0 # 空闲时间：距离上次运行工作时间
         self.dfCrew = df_new
     
     def get_near1_people(self,lounge,group):
@@ -95,18 +97,36 @@ class Crew:
         '''
         # 任务
         for name in name_dict:
-            self.dfCrew.loc[self.dfCrew['name'] == name, 'status'] = 1
-            self.dfCrew.loc[self.dfCrew['name'] == name, 'work_load'] += 10
-            self.dfCrew.loc[self.dfCrew['name'] == name, 'end_time'] = now + pd.Timedelta('10 min')
-            self.dfCrew.loc[self.dfCrew['name'] == name, 'gate'] = task.gate
-            self.dfCrew.loc[self.dfCrew['name'] == name, 'free'] = 0
+            self.dfCrew.loc[self.dfCrew['name'] == name, 'status'] = 1 # 将其状态设置为被占用
+            self.dfCrew.loc[self.dfCrew['name'] == name, 'work_load'] += task.get_task_duration() # 增加工作时长
+            time = task.taskDuration[0] # int type
+            self.dfCrew.loc[self.dfCrew['name'] == name, 'end_time'] = now + pd.Timedelta(f'{time}minute')# 设置期望工作时间
+            self.dfCrew.loc[self.dfCrew['name'] == name, 'gate'] = task.gate # 工作登机口
+            self.dfCrew.loc[self.dfCrew['name'] == name, 'free'] = 0 # 重置空闲时间
+            self.dfCrew.loc[self.dfCrew['name'] == name, 'count'] += 1
+    
+    def record_single_day(self,day):
+        '''
+        记录单天的工作情况,保留用户的信息
+        '''
+        temp_df = copy.deepcopy(self.dfCrew) # 清空数据
+        temp_df['date'] = day # 新增日期
+        temp_df = temp_df[temp_df['work_load'] > 0] # 只保留工作过的人员
+        temp_df.to_csv(f'./dataset/crew/crew_{day}.csv') # 每天保存到对应的结果
+        # self.dfCrew['status'] = 0  # 状态不需要更新
+        self.dfCrew['work_load'] = 0 # 工作时间清零
+        # self.dfCrew['end_time'] = None # 不需要更新期望工作时间
+        # self.dfCrew['gate'] = None # 不需要更新等级时间
+        self.dfCrew['count'] = 0 # 排班次数清零
+        # self.dfCrew['free'] = 0  # 空闲时间等待最后更新
+
+        
     
     def update_status(self,now):
         ''' 
         根据当前的时间恢复状态
         '''
-        # 空闲均+1
-        self.dfCrew.loc[self.dfCrew['status'] == 0, 'free'] += 1
+        self.dfCrew.loc[self.dfCrew['status'] == 0, 'free'] += 1 # 空闲状态用户的空闲时间增加
         self.dfCrew.loc[(now > self.dfCrew['end_time'] + pd.Timedelta('2 min')) & (self.dfCrew['status'] == 1), 'status'] = 0
         self.dfCrew.loc[(now > self.dfCrew['end_time'] + pd.Timedelta('2 min')) & (self.dfCrew['status'] == 1), 'gate'] = self.dfCrew.loc[(now > self.dfCrew['end_time'] + pd.Timedelta('2 min')) & (self.dfCrew['status'] == 1), 'gate']
 
