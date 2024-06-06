@@ -24,7 +24,7 @@ def main():
 
     while not airport.is_done():
         airport.step()
-        
+    print(airport.flightSet.index)
     airport.save_result()
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ crew.py
 1. crew 主要是面向勤务人员操作
 
 task.py
-1. task 任务类，用于描述任务的时间、地点和任务属性
+1. task 任务类，用于描述任务的时间、地点和任务属性,包括任务的持续时间
 2. taskSet 任务集合类，方便后续操作
 
 airports.py
@@ -42,6 +42,10 @@ airports.py
 2. airports 函数仿真的主要逻辑，通过调用上述的类别，在时间线的步骤下，按照 flights 生成对应的航班，并根据 aviation 产生对应的 task，并调用 crew 的召回算法来获取当前的空闲人员，引入 operator 后完成两者的最优匹配。根据识别的结果来完成状态更新。
 
 ![仿真算法流程](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240527112840.png)
+
+### 待办事项
+1. 将现实任务的时间替换现有的随机时间
+
 
 ### 匹配算法思路
 这部分主要由 zp 复杂，期望主导引入 TRB 论文，前期调研可行的匹配算法包括：

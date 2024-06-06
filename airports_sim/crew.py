@@ -95,7 +95,7 @@ class Crew:
         '''
         根据分配的任务更新人员状态
         '''
-        # 任务
+        # 任务指派之后，对应人员的数值得到更新
         for name in name_dict:
             self.dfCrew.loc[self.dfCrew['name'] == name, 'status'] = 1 # 将其状态设置为被占用
             self.dfCrew.loc[self.dfCrew['name'] == name, 'work_load'] += task.get_task_duration() # 增加工作时长
@@ -113,12 +113,14 @@ class Crew:
         temp_df['date'] = day # 新增日期
         temp_df = temp_df[temp_df['work_load'] > 0] # 只保留工作过的人员
         temp_df.to_csv(f'./dataset/crew/crew_{day}.csv') # 每天保存到对应的结果
-        # self.dfCrew['status'] = 0  # 状态不需要更新
+
+               
+        self.dfCrew['status'] = 0  # 状态不需要更新
         self.dfCrew['work_load'] = 0 # 工作时间清零
-        # self.dfCrew['end_time'] = None # 不需要更新期望工作时间
-        # self.dfCrew['gate'] = None # 不需要更新等级时间
+        self.dfCrew['end_time'] = None # 不需要更新期望工作时间
+        self.dfCrew['gate'] = None # 不需要更新等级时间
         self.dfCrew['count'] = 0 # 排班次数清零
-        # self.dfCrew['free'] = 0  # 空闲时间等待最后更新
+        self.dfCrew['free'] = 0  # 空闲时间等待最后更新
 
         
     

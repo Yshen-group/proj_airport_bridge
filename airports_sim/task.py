@@ -18,6 +18,8 @@ class Task():
         self.taskDuration = [] # 勤务需求持续时间
         self.type = 'inbound' # 类型, inbound or outbound
         self.airtype = 'L' # 机型
+        self.lifetime = 15 # 可被观察的时间为 15 分钟
+        self.isdone = False # 是否完成
     
     def get_task_description(self):
         ''' 
@@ -36,6 +38,19 @@ class Task():
     
     def __len__(self):
         return len(self.taskList)
+    
+    def update_status(self,flag = False):
+        '''
+        更新任务状态
+        '''
+        
+        self.lifetime -= 1
+    
+    def isdead(self):
+        '''
+        判断任务是否可以执行
+        '''
+        return self.lifetime == 0
 
 class TaskSet:
     '''
