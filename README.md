@@ -61,8 +61,8 @@ airports.py
 
 ### 结果输出
 
-生成的可行执行过程存储在 task-exec 文件中，后续会增加可视化输出模块,增加多路人员召回模块最终结果实现0%缺失
-![匹配算法缺失](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240527192737.png)
+生成的可行执行过程存储在 task-exec 文件中，完成匹配个数和工作时间的关系
+![匹配算法缺失](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240607123540.png)
 
 ### 如何修改本项目
 
