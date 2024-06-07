@@ -186,18 +186,19 @@ class airports(mesa.Model):
                     print('No enough people, try to find the near3 people')
                     df_can = self.crew.get_near3_people(self.get_lounge(task.gate),group,df_can) # 第三次任务匹配
                     name_list = self.operator.match_algorithm(task,df_can)
-                    
-                self.crew._update_people_status(name_list,task,self.now)
-                self.taskSet.update_task_status(name_list,task)
+    
                 # 保存 namelist
                 if name_list:
                     self.taskSet.tasks.remove(task)
                     self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
+                    self.crew._update_people_status(name_list,task,self.now)
+                    self.taskSet.update_task_status(name_list,task)
+                else:
+                    if task.isdead():
+                        self.taskSet.tasks.remove(task)
+                        name_list = None
+                        self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
                 task.update_status()
-                if task.isdead():
-                    self.taskSet.tasks.remove(task)
-                    name_list = None
-                    self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
 
         # 每增加一天
         if (self.now-self.begin).days != self.days:

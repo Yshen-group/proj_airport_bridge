@@ -33,7 +33,7 @@ class Task():
         '''
         # 根据任务的时间生成持续时间，20～40 分钟,pd.Timedelta 格式
         # TODO 后续修改为 self.time 开启的时间
-        duration = np.random.randint(20,40)
+        duration = np.random.randint(30,40)
         return duration 
     
     def __len__(self):

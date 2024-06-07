@@ -18,6 +18,8 @@
 2. 机务维修中心进港 2 月
 3. 观测航班信息.xlsx; 在上述信息上提取的规则数据
 
+
+
 ### 仿真流程说明
 
 仿真过程的类整理在根目录 /airports_sim 文件夹中，其中文件作用包括
@@ -44,7 +46,8 @@ airports.py
 ![仿真算法流程](https://chenxia31blog.oss-cn-hangzhou.aliyuncs.com/img/20240527112840.png)
 
 ### 待办事项
-1. 将现实任务的时间替换现有的随机时间
+1. 将现实任务的时间替换现有的随机时间,task.get_task_duration
+2. 更新匹配算法 ，airports.operator.match_algorithm
 
 
 ### 匹配算法思路
