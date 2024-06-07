@@ -91,8 +91,9 @@ class airports(mesa.Model):
         name_list: 人员名单
         '''
         print('======   Record the process   =======')
-        duration = 10
-        name_list = ''.join(list(name_list.keys()))
+        duration = duration[0]
+        if name_list:
+            name_list = ''.join(list(name_list.keys()))
         # 为 df_task_exec 添加一行记录
         new_row = {'Time':time,'Gate':gate,'Lounge':terminals,'Duration':duration,'People':name_list}
         # 没有 row
@@ -117,6 +118,7 @@ class airports(mesa.Model):
         '''
         self.aviationSet.login(aviation_path)
         self.flightSet.login(flights_path)
+        print('Flights login success,len is ',self.flightSet.df_flights.shape[0])
         self.flightSet.filter_by_id(self.aviationSet.get_company_codingID())
         self.crew.login(crew_zizhi_path,crew_group_path)
         self.gate_terminal = pd.read_excel(gate_lounge_path) # ./dataset/Gate_lounge.xlsx'
@@ -184,13 +186,19 @@ class airports(mesa.Model):
                     print('No enough people, try to find the near3 people')
                     df_can = self.crew.get_near3_people(self.get_lounge(task.gate),group,df_can) # 第三次任务匹配
                     name_list = self.operator.match_algorithm(task,df_can)
-                    
-                self.crew._update_people_status(name_list,task,self.now)
-                self.taskSet.update_task_status(name_list,task)
+    
                 # 保存 namelist
                 if name_list:
                     self.taskSet.tasks.remove(task)
                     self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
+                    self.crew._update_people_status(name_list,task,self.now)
+                    self.taskSet.update_task_status(name_list,task)
+                else:
+                    if task.isdead():
+                        self.taskSet.tasks.remove(task)
+                        name_list = None
+                        self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
+                task.update_status()
 
         # 每增加一天
         if (self.now-self.begin).days != self.days:

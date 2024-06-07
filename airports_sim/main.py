@@ -5,9 +5,21 @@ from airports import *
 from crew import *
 import os
 import shutil
+import time
+def logger(start,end):
+    print('start:',start)
+    print('end:',end)
+    print('time:',end-start)
+    print('=====================')
+    path = './dataset/task_exec.xlsx'
+    df = pd.read_excel(path)
+    missing = df['People'].isnull().sum()
+    print('缺失率', missing/len(df))
+
 
 def main():
     # 清空 crew 下的所有文件，'./dataset/crew/'
+    start_time = time.time()
     print('======   Clear the crew folder   =======')
     if os.path.exists('./dataset/crew/'):
         shutil.rmtree('./dataset/crew/')
@@ -24,8 +36,11 @@ def main():
 
     while not airport.is_done():
         airport.step()
-        
+    print(airport.flightSet.index)
+
+    end_time = time.time()
     airport.save_result()
+    logger(start_time,end_time)
 
 if __name__ == '__main__':
     main()
