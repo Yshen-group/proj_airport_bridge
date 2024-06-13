@@ -159,7 +159,7 @@ class airports():
     
     def step(self):
         '''
-        每次仿真的前进步骤
+        每次仿真的前进步骤s
         '''
         data = {} # 想清楚 data 需要有什么数据
         # 1. time，当前时间
@@ -176,10 +176,13 @@ class airports():
             for flight in flights_list:
                 task = self.generation_task(flight) # 根据航班信息生成任务
                 self.taskSet.add_task(task) # 向任务集合中添加任务
-
+        data['tasks'] = self.taskSet.tasks
+        group = (self.now - self.begin).days % 4 + 1 # 每一天同时只有一个 Group 工作
+        data['group'] = group
+        name_list = None
         if self.taskSet.isnotnull():   # 这里应该是获取所有需要解决的任务列表，然后匹配所有的任务
             for task in self.taskSet:
-                group = (self.now - self.begin).days % 4 + 1 # 每一天同时只有一个 Group 工作
+                
                 df_can =self.crew.get_near1_people(self.get_lounge(task.gate),group) # 获取附近 1/4 的人员
                 name_list = self.operator.match_algorithm(task,df_can) # 第一次任务匹配
                 if not name_list: # 第一次找不到人
@@ -204,6 +207,7 @@ class airports():
                         name_list = None
                         self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
                 task.update_status()
+        data['name_list'] = name_list
 
         # 每增加一天
         if (self.now-self.begin).days != self.days:
@@ -213,8 +217,8 @@ class airports():
         return data
 
     def is_done(self):
-        return self.flightSet.index == 10
-        # return self.flightSet.is_done()
+        # return self.flightSet.index == 10
+        return self.flightSet.is_done()
 
 
     

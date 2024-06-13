@@ -51,6 +51,12 @@ class Task():
         判断任务是否可以执行
         '''
         return self.lifetime == 0
+    
+    def to_row(self):
+        '''
+        转换成行
+        '''
+        return pd.DataFrame([self.__dict__])
 
 class TaskSet:
     '''

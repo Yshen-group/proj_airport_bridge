@@ -45,6 +45,12 @@ class Flights:
         self.ac = row['航空公司']
         self.boundType = row['type']
         self.airType = row['机型']
+    
+    def to_row(self):
+        '''
+        转换成行
+        '''
+        return pd.DataFrame([self.__dict__])
         
 class FlightsSet:
     ''' 
