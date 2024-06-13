@@ -6,6 +6,9 @@ from crew import *
 import os
 import shutil
 import time
+import streamlit as st
+
+
 def logger(start,end):
     print('start:',start)
     print('end:',end)
@@ -16,9 +19,12 @@ def logger(start,end):
     missing = df['People'].isnull().sum()
     print('缺失率', missing/len(df))
 
+def show_crew(df_crew):
+    st.write(df_crew)
 
 def main():
     # 清空 crew 下的所有文件，'./dataset/crew/'
+    st.title('系统仿真过程')
     start_time = time.time()
     print('======   Clear the crew folder   =======')
     if os.path.exists('./dataset/crew/'):
@@ -35,7 +41,14 @@ def main():
     print('======   Start the simulation   =======')
 
     while not airport.is_done():
-        airport.step()
+        data = airport.step() # 获取数据接口
+        now = data['time']
+        flights = data['flights']
+        crew = data['crew']
+        st.title('当前时间：{}'.format(now))
+        show_crew(crew)
+
+
     print(airport.flightSet.index)
 
     end_time = time.time()

@@ -1,4 +1,3 @@
-import mesa
 import pandas as pd
 import numpy as np
 from task import *
