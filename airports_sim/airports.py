@@ -2,8 +2,6 @@ from flights import *
 from task import *
 from aviation import *
 from crew import *
-import mesa
-
 class operator():
     ''' 
     调度人员类抽象
@@ -59,7 +57,7 @@ class operator():
                     name_task_dict[name].add(trans[i])
         return name_task_dict
 
-class airports(mesa.Model):
+class airports():
     ''' 
     机场仿真过程类
     '''
@@ -163,9 +161,16 @@ class airports(mesa.Model):
         '''
         每次仿真的前进步骤
         '''
+        data = {} # 想清楚 data 需要有什么数据
+        # 1. time，当前时间
         self.now += pd.Timedelta('1min') # 每分钟仿真一次
+        data['time'] = self.now
+        # 2. crew，人员信息
         self.crew.update_status(self.now) # 更新人员的 status 状态
+        data['crew'] = self.crew.dfCrew
+        # 3. task，任务信息
         flights_list = self.get_margin_flights() # 获取能够观察到的航班
+        data['flights'] = flights_list
 
         if flights_list: 
             for flight in flights_list:
@@ -204,10 +209,12 @@ class airports(mesa.Model):
         if (self.now-self.begin).days != self.days:
             self.crew.record_single_day(str(self.now.month)+'-'+str(self.now.day))
             self.days = (self.now-self.begin).days # 更新天数
+        
+        return data
 
     def is_done(self):
-        # return self.flightSet.index == 10
-        return self.flightSet.is_done()
+        return self.flightSet.index == 10
+        # return self.flightSet.is_done()
 
 
     
