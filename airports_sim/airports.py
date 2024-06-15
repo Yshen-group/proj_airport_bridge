@@ -22,11 +22,11 @@ class operator():
         '''
         # 贪心选择，空闲时间最长排序的人员，第一具有 task 的人员
 
-        taskList = task.taskList
-        boundType = task.type # 飞机进出港
-        airType = task.airtype # 机型
+        taskList = task.taskList # 保障需求列表
+        taskMinNum = task.minNum # 任务最小人数
 
-        print(f'boundType: {boundType}, airType: {airType}')
+        
+        print(f'boundType: {task.type}, airType: {task.airtype},minNum: {taskMinNum}')
         df_can = candidate.sort_values(by='free',ascending=False)
 
         # 如果没有人员
@@ -47,14 +47,28 @@ class operator():
                             if row[trans[j]] == 1:
                                 name_task_dict[row['name']].add(trans[j])
                                 taskList[j] -= row[trans[j]]
+                        taskMinNum -= 1
                         break
-        if taskList==[0,0,0,0,0]:
+
+        # 如果选择的人数不满足最小人数
+        max_loop = 0
+        while taskMinNum > 0:
             # 选择 free 时间长的人
-            name = df_can.iloc[0]['name']
-            name_task_dict[name] = set()
-            for i in range(len(taskList)):
-                if df_can.iloc[0,:][trans[i]] == 1:
-                    name_task_dict[name].add(trans[i])
+            i = 0
+            for index,row in df_can.iterrows():
+                # risky: 找不到空闲的人员
+                if row['name'] not in name_task_dict:
+                    name = row['name']
+                    name_task_dict[name] = set()
+                    for j in range(len(taskList)):
+                        if row[trans[j]] == 1:
+                            name_task_dict[name].add(trans[j])
+                            taskList[j] -= row[trans[j]]
+                    taskMinNum -= 1
+                    break
+            max_loop += 1
+            if max_loop > 10:
+                return None
         return name_task_dict
 
 class airports():
@@ -105,7 +119,7 @@ class airports():
         '''
         self.df_task_exec.to_excel('./dataset/task_exec.xlsx',index=False)
 
-    def login(self,aviation_path,flights_path,crew_zizhi_path,crew_group_path,gate_lounge_path):
+    def login(self,aviation_path,flights_path,crew_zizhi_path,crew_group_path,gate_lounge_path,type_minNum_path):
         '''
         注册静态数据
         aviation_path: 航司信息路径
@@ -117,12 +131,14 @@ class airports():
         self.aviationSet.login(aviation_path)
         self.flightSet.login(flights_path)
         print('Flights login success,len is ',self.flightSet.df_flights.shape[0])
-        self.flightSet.filter_by_id(self.aviationSet.get_company_codingID())
+        # self.flightSet.filter_by_id(self.aviationSet.get_company_codingID()) # 06-15 取消航司过滤
         self.crew.login(crew_zizhi_path,crew_group_path)
         self.gate_terminal = pd.read_excel(gate_lounge_path) # ./dataset/Gate_lounge.xlsx'
         self.gate_terminal.rename(columns={'停机口':'gate',
                                            '休息室':'lounge'}, inplace=True)
         self.begin = self.flightSet.get_begin_time()
+
+        self.df_type_minNum = pd.read_excel(type_minNum_path) # 机型最小人数
         self.now = self.begin # 初始化最早时间
 
     def get_margin_flights(self):
@@ -130,17 +146,47 @@ class airports():
         获取可观察的航班的集合
         '''
         return self.flightSet.get_near_flights(self.now,self.margin)
+    
+    def get_minNum(self,airType,boundType,taskFlag):
+        '''
+        获取最小航班数,这里完全根据历史经验来的
+        airType: 机型
+        boundType: 进出港类型
+        taskFlag: 是否有任务需求
+        '''
+        res = 1
+        try:
+            flag = self.df_type_minNum[self.df_type_minNum['机型'] == airType]['min'].values[0]
+        except:
+            print('No such airType or boundType')
+        
+        if flag == 1:
+            # 说明是窄体机
+            if taskFlag != 0:
+                res = 2
+        else:
+            # 说明是宽体机
+            if boundType == 'inbound':
+                res = 2
+            else:
+                res = 3
+        return res
+        
 
     def generation_task(self,flight):
         ''' 
         从航班中生成任务,任务的时间和地点与航班一致
         '''
-        newTask = self.aviationSet.create_task(flight.ac)
+        newTask = self.aviationSet.create_task(flight.ac) # 1. 根据航司信息生成初始任务
+
         newTask.time = flight.actual_datetime  # 任务执行时刻
         newTask.lounge = self.get_lounge(flight.gate) # 任务执行休息室
         newTask.gate = flight.gate # 任务执行登机口
         newTask.type = flight.boundType # 任务类型
         newTask.airtype = flight.airType # 任务飞机类型
+
+        newTask.minNum = self.get_minNum(flight.airType,flight.boundType,sum(newTask.taskList)) # 任务最小人数
+
         newTask.taskDuration = [newTask.get_task_duration() for _ in range(len(newTask.taskList))] # 任务持续时间,这部分需要做数据分析
         return newTask
     

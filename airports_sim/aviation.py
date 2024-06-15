@@ -21,11 +21,11 @@ class AviationCompany():
         self.codingId = None # 航司二字代码
         self.terminal = 'T2' # set for T2 or S2
 
-        self.isYiBan = False # 是否需要一般勤务
-        self.isFangXing = False # 是否需要放行机务
-        self.isWeiXiu = False # 是否需要维修机务
-        self.isZhongwen = False # 是否需要中文耳机
-        self.isYingwen = False # 是否需要英文耳机
+        self.isYiBan = 0 # 是否需要一般勤务
+        self.isFangXing = 0 # 是否需要放行机务
+        self.isWeiXiu = 0 # 是否需要维修机务
+        self.isZhongwen = 0 # 是否需要中文耳机
+        self.isYingwen = 0 # 是否需要英文耳机
     
     def generate_time_task(self):
         ''' 
@@ -107,11 +107,9 @@ class ACsets():
         '''
         avi = AviationCompany()
         temp_row = self.dfCompany[self.dfCompany['codingId'] == codingID]
-        if temp_row.empty:
-            raise 'The company is not in the list'
-        else:
+        if not temp_row.empty:
             avi.update_from_row(temp_row)
-            return avi 
+        return avi 
 
     def create_task(self,codingID):
         '''

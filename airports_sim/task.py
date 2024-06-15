@@ -14,6 +14,9 @@ class Task():
         self.lounge = None # 休息室
         self.gate = None # 登机口
         self.time = None # 时间
+
+        self.minNum = 1 # 最小人数，由机型和进出港类型决定
+
         self.taskList = [] # 勤务需求
         self.taskDuration = [] # 勤务需求持续时间
         self.type = 'inbound' # 类型, inbound or outbound
