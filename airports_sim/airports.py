@@ -19,6 +19,7 @@ class operator():
         candidate: 候选人员
 
         return: 匹配的人员名单
+        name_task_dict 的类型是什么？
         '''
         # 贪心选择，空闲时间最长排序的人员，第一具有 task 的人员
 
@@ -42,11 +43,12 @@ class operator():
                 for index,row in df_can.iterrows():
                     if row[trans[i]] == 1 and row['name'] not in name_task_dict:
                         # 同时更新 taskList
-                        name_task_dict[row['name']] = set()
-                        for j in range(len(taskList)):
-                            if row[trans[j]] == 1:
-                                name_task_dict[row['name']].add(trans[j])
-                                taskList[j] -= row[trans[j]]
+                        name_task_dict[row['name']] = trans[i]
+                        # # 设置 
+                        # for j in range(len(taskList)):
+                        #     if row[trans[j]] == 1:
+                        #         name_task_dict[row['name']].add(trans[j])
+                        #         taskList[j] -= row[trans[j]]
                         taskMinNum -= 1
                         break
 
@@ -59,11 +61,11 @@ class operator():
                 # risky: 找不到空闲的人员
                 if row['name'] not in name_task_dict:
                     name = row['name']
-                    name_task_dict[name] = set()
-                    for j in range(len(taskList)):
-                        if row[trans[j]] == 1:
-                            name_task_dict[name].add(trans[j])
-                            taskList[j] -= row[trans[j]]
+                    name_task_dict[name] = 'default'
+                    # for j in range(len(taskList)):
+                    #     if row[trans[j]] == 1:
+                    #         name_task_dict[name].add(trans[j])
+                    #         taskList[j] -= row[trans[j]]
                     taskMinNum -= 1
                     break
             max_loop += 1
@@ -83,6 +85,9 @@ class airports():
         self.crew = Crew() # 地勤人员信息
         self.operator = operator() # 调度算法
         self.gate_lounge = None
+
+        self.single_total = -1 # 累计任务计数
+        self.single_null = -1 # 断档任务计数
 
         # Dynamic datatype
         self.taskSet = TaskSet() # 任务集合
@@ -226,9 +231,10 @@ class airports():
         group = (self.now - self.begin).days % 4 + 1 # 每一天同时只有一个 Group 工作
         data['group'] = group
         name_list = None
+        data['lounge'] = -1 # lounge 默认为 -1
         if self.taskSet.isnotnull():   # 这里应该是获取所有需要解决的任务列表，然后匹配所有的任务
             for task in self.taskSet:
-                
+                data['lounge'] = self.get_lounge(task.gate)
                 df_can =self.crew.get_near1_people(self.get_lounge(task.gate),group) # 获取附近 1/4 的人员
                 name_list = self.operator.match_algorithm(task,df_can) # 第一次任务匹配
                 if not name_list: # 第一次找不到人
@@ -247,10 +253,12 @@ class airports():
                     self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
                     self.crew._update_people_status(name_list,task,self.now)
                     self.taskSet.update_task_status(name_list,task)
+                    self.single_total += 1
                 else:
                     if task.isdead():
                         self.taskSet.tasks.remove(task)
                         name_list = None
+                        self.single_null += 1
                         self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
                 task.update_status()
         data['name_list'] = name_list
@@ -259,7 +267,11 @@ class airports():
         if (self.now-self.begin).days != self.days:
             self.crew.record_single_day(str(self.now.month)+'-'+str(self.now.day))
             self.days = (self.now-self.begin).days # 更新天数
-        
+            self.single_null = -1
+            self.single_total = -1
+
+        data['single_total'] = self.single_total
+        data['single_null'] = self.single_null
         return data
 
     def is_done(self):

@@ -36,7 +36,8 @@ class Task():
         '''
         # 根据任务的时间生成持续时间，20～40 分钟,pd.Timedelta 格式
         # TODO 后续修改为 self.time 开启的时间
-        duration = np.random.randint(30,40)
+        df_temp = pd.read_csv('./dataset/work_time.csv')
+        duration = np.random.randint(int(df_temp['min']),int(df_temp['max']))
         return duration 
     
     def __len__(self):
