@@ -20,7 +20,10 @@ def logger(start,end):
 
 def main():
 
-
+    df_temp = pd.read_csv('./dataset/work_time.csv')
+    df_temp['min'] = 30
+    df_temp['max'] = 40
+    df_temp.to_csv('./dataset/work_time.csv')
     start_time = time.time()
     print('======   Clear the crew folder   =======')
     if os.path.exists('./dataset/crew/'):
