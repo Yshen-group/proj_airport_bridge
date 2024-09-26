@@ -274,6 +274,78 @@ class airports():
         data['single_null'] = self.single_null
         return data
 
+    def step_cover(self,cover_name_list):
+        '''
+        每次仿真的前进步骤s
+        '''
+        data = {} # 想清楚 data 需要有什么数据
+        # 1. time，当前时间
+        self.now += pd.Timedelta('1min') # 每分钟仿真一次
+        data['time'] = self.now
+        # 2. crew，人员信息
+        self.crew.update_status(self.now) # 更新人员的 status 状态
+        data['crew'] = self.crew.dfCrew
+
+        # 3. task，任务信息
+        flights_list = self.get_margin_flights() # 获取能够观察到的航班
+        data['flights'] = flights_list
+
+        if flights_list: 
+            for flight in flights_list:
+                task = self.generation_task(flight) # 根据航班信息生成任务
+                self.taskSet.add_task(task) # 向任务集合中添加任务
+        data['tasks'] = self.taskSet.tasks
+        group = (self.now - self.begin).days % 4 + 1 # 每一天同时只有一个 Group 工作
+        data['group'] = group
+        name_list = None
+        data['lounge'] = -1 # lounge 默认为 -1
+        # 短暂的 cover 操作
+        self.crew.cover_people(cover_name_list,self.now)
+        if self.taskSet.isnotnull():   # 这里应该是获取所有需要解决的任务列表，然后匹配所有的任务
+            for task in self.taskSet:
+                data['lounge'] = self.get_lounge(task.gate)
+                df_can =self.crew.get_near1_people(self.get_lounge(task.gate),group) # 获取附近 1/4 的人员
+                name_list = self.operator.match_algorithm(task,df_can) # 第一次任务匹配
+                if not name_list: # 第一次找不到人
+                    print('No enough people, try to find the near2 people')
+                    df_can = self.crew.get_near2_people(self.get_lounge(task.gate),group,self.now,df_can) # 第二次任务匹配
+                    name_list = self.operator.match_algorithm(task,df_can)
+                if not name_list:
+                    # 除非没有人员，否则不会执行
+                    print('No enough people, try to find the near3 people')
+                    df_can = self.crew.get_near3_people(self.get_lounge(task.gate),group,df_can) # 第三次任务匹配
+                    name_list = self.operator.match_algorithm(task,df_can)
+    
+                # 保存 namelist
+                if name_list:
+                    self.taskSet.tasks.remove(task)
+                    self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
+                    self.crew._update_people_status(name_list,task,self.now)
+                    self.taskSet.update_task_status(name_list,task)
+                    self.single_total += 1
+                else:
+                    if task.isdead():
+                        self.taskSet.tasks.remove(task)
+                        name_list = None
+                        self.single_null += 1
+                        self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
+                task.update_status()
+
+        self.crew.recover_people(cover_name_list,self.now)
+
+        data['name_list'] = name_list
+
+        # 每增加一天
+        if (self.now-self.begin).days != self.days:
+            self.crew.record_single_day(str(self.now.month)+'-'+str(self.now.day))
+            self.days = (self.now-self.begin).days # 更新天数
+            self.single_null = -1
+            self.single_total = -1
+
+        data['single_total'] = self.single_total
+        data['single_null'] = self.single_null
+        return data
+
     def is_done(self):
         # return self.flightSet.index == 10
         return self.flightSet.is_done()

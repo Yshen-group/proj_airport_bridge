@@ -103,6 +103,22 @@ class Crew:
             self.dfCrew.loc[self.dfCrew['name'] == name, 'gate'] = task.gate # 工作登机口
             self.dfCrew.loc[self.dfCrew['name'] == name, 'free'] = 0 # 重置空闲时间
             self.dfCrew.loc[self.dfCrew['name'] == name, 'count'] += 1
+
+    def cover_people(self,name_dict,now):
+        '''
+        屏蔽当前人员的信息
+        '''
+        print(name_dict)
+        for name in name_dict:
+            self.dfCrew.loc[self.dfCrew['name'] == name, 'status'] = 2 # 将其状态设置为被占用
+    
+    def recover_people(self,name_dict,now):
+        ''' 
+        恢复当前人员的信息
+        '''
+        for  name in name_dict:
+            self.dfCrew.loc[self.dfCrew['name'] == name, 'status'] = 0 # 将其状态设置为空闲
+
     
     def record_single_day(self,day):
         '''
@@ -120,8 +136,6 @@ class Crew:
         self.dfCrew['gate'] = None # 不需要更新等级时间
         self.dfCrew['count'] = 0 # 排班次数清零
         self.dfCrew['free'] = 0  # 空闲时间等待最后更新
-
-        
     
     def update_status(self,now):
         ''' 
