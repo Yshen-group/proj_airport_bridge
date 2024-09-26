@@ -103,7 +103,7 @@ class Crew:
             self.dfCrew.loc[self.dfCrew['name'] == name, 'gate'] = task.gate # 工作登机口
             self.dfCrew.loc[self.dfCrew['name'] == name, 'free'] = 0 # 重置空闲时间
             self.dfCrew.loc[self.dfCrew['name'] == name, 'count'] += 1
-    
+
     def cover_people(self,name_dict,now):
         '''
         屏蔽当前人员的信息

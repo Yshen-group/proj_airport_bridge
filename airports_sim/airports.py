@@ -330,9 +330,11 @@ class airports():
                         self.single_null += 1
                         self.record_process(task.gate,task.time,task.lounge,task.taskDuration,name_list)
                 task.update_status()
+
         self.crew.recover_people(cover_name_list,self.now)
 
         data['name_list'] = name_list
+
         # 每增加一天
         if (self.now-self.begin).days != self.days:
             self.crew.record_single_day(str(self.now.month)+'-'+str(self.now.day))
