@@ -184,7 +184,6 @@ def streamlit_html_div():
     return time_container,flight_col,name_col,sub_crew_container,crew_container,total_workload_col,group_workload_col,crew_container,result_col,confirm_col
 
 def main():
-
     time_container,flight_col,name_col,sub_crew_container,crew_container,total_workload_col,group_workload_col,crew_container,result_col,confirm_col = streamlit_html_div()
     start_time = time.time()
     print('======   Clear the crew folder   =======')
@@ -211,8 +210,12 @@ def main():
     null_list = [0]
     print('======   Start the simulation   =======')
     lounge = '60'
-
-    while not airport.is_done():
+    
+    # 设置需求，暂停按键
+    st.session_state.confirm = True
+    st.button('开始仿真')
+    while not airport.is_done() and st.session_state.confirm:
+        # 初始化状态
         data = airport.step() # 获取数据接口
         now = data['time']
         flights = data['flights']
@@ -231,9 +234,6 @@ def main():
         else:
             total_list[-1] = single_total
             null_list[-1] = single_null
-        
-
-    
         # crew_container.write('当前时间：{}'.format(now))
         time_container.write('当前时间：{}'.format(now))
         if flights:
@@ -247,10 +247,7 @@ def main():
         show_result(result_col,total_list,null_list)
         if speed != 1:
             time.sleep(speed/1000)
-
-
     print(airport.flightSet.index)
-
     end_time = time.time()
     airport.save_result()
     logger(start_time,end_time)
